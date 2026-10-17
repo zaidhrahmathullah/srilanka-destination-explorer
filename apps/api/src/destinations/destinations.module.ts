@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AuthModule } from '../auth/auth.module.js';
 
 import {
   Destination,
@@ -17,6 +18,7 @@ import { DestinationsService } from './destinations.service.js';
         schema: DestinationSchema,
       },
     ]),
+    AuthModule,
   ],
   controllers: [DestinationsController],
   providers: [DestinationsService],

@@ -13,6 +13,9 @@ import { DestinationsService } from './destinations.service.js';
 import { CreateDestinationDto } from './dto/create-destination.dto.js';
 import { UpdateDestinationDto } from './dto/update-destination.dto.js';
 
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+
 @Controller('destinations')
 export class DestinationsController {
   constructor(
@@ -24,6 +27,7 @@ export class DestinationsController {
     return this.destinationsService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createDestinationDto: CreateDestinationDto) {
     return this.destinationsService.create(createDestinationDto);
@@ -34,6 +38,7 @@ export class DestinationsController {
     return this.destinationsService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -42,6 +47,7 @@ export class DestinationsController {
     return this.destinationsService.update(id, updateDestinationDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.destinationsService.remove(id);

@@ -6,6 +6,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
 import { DestinationsModule } from './destinations/destinations.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DestinationsModule } from './destinations/destinations.module.js';
     }),
 
     DestinationsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
