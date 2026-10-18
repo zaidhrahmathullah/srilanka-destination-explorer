@@ -4,6 +4,9 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import { getDestinationById } from "@/lib/destinations";
 
+import { getDestinationWeather } from "@/lib/weather";
+import { WeatherCard } from "@/components/weather/WeatherCard";
+
 type DestinationPageProps = {
   params: Promise<{
     id: string;
@@ -20,6 +23,8 @@ export default async function DestinationPage({
   if (!destination) {
     notFound();
   }
+
+  const weather = await getDestinationWeather(id);
 
   const { name, description, latitude, longitude, imageUrl } = destination;
 
@@ -84,15 +89,9 @@ export default async function DestinationPage({
 
               <div className="my-6 border-t border-slate-200" />
 
-              <section>
-                <h2 className="text-base font-semibold text-brand">
-                  Current Weather
-                </h2>
+              
+              <WeatherCard weather={weather} />
 
-                <p className="mt-2 text-sm text-slate-600">
-                  Live weather information will be available soon.
-                </p>
-              </section>
             </div>
           </article>
         </div>

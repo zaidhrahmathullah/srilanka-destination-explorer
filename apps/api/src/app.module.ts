@@ -7,6 +7,7 @@ import { AppService } from './app.service.js';
 
 import { DestinationsModule } from './destinations/destinations.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { WeatherModule } from './weather/weather.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuthModule } from './auth/auth.module.js';
 
     DestinationsModule,
     AuthModule,
+    WeatherModule,
   ],
   controllers: [AppController],
   providers: [AppService],

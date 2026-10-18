@@ -22,5 +22,6 @@ import { DestinationsService } from './destinations.service.js';
   ],
   controllers: [DestinationsController],
   providers: [DestinationsService],
+  exports: [DestinationsService],
 })
 export class DestinationsModule {}
