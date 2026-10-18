@@ -1,53 +1,61 @@
-type HealthResponse = {
-  status: string;
-  message: string;
-};
 
-async function getHealth(): Promise<HealthResponse> {
-  const response = await fetch("http://localhost:4000/api/health", {
-    cache: "no-store",
-  });
+import { Container } from "@/components/layout/Container";
+import { DestinationCard } from "@/components/destinations/DestinationCard";
+import { getDestinations } from "@/lib/destinations";
 
-  if (!response.ok) {
-    throw new Error("Failed to connect to backend");
-  }
+import type { Destination } from "@/types/destination";
 
-  return response.json();
-}
+import { HomeHero } from "@/components/home/HomeHero";
+
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  let health: HealthResponse | null = null;
+  let destinations: Destination[] = [];
+  let hasError = false;
 
   try {
-    health = await getHealth();
+    destinations = await getDestinations();
   } catch (error) {
-    console.error("Backend connection failed:", error);
+    console.error("Failed to fetch destinations:", error);
+    hasError = true;
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 p-10 text-slate-900">
-      <h1 className="text-3xl font-bold">
-        Sri Lanka Destination Explorer
-      </h1>
+    <main>
+      <HomeHero />
 
-      <p className="mt-4">Testing our first full-stack connection.</p>
+      <section id="destinations" className="scroll-mt-8 py-12 sm:py-16">
+        <Container>
+          <h2 className="mb-8 text-2xl font-bold text-brand">
+            Discover Destinations
+          </h2>
 
-      <div className="mt-6 rounded-lg bg-white p-6 shadow">
-        <h2 className="text-xl font-semibold">Backend Status</h2>
-
-        {health ? (
-          <div className="mt-3">
-            <p className="text-green-600">
-              Status: {health.status}
-            </p>
-            <p>{health.message}</p>
-          </div>
-        ) : (
-          <p className="mt-3 text-red-600">
-            Backend connection failed.
-          </p>
-        )}
-      </div>
+          {hasError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800"
+            >
+              Unable to load destinations right now.
+              Please try again later.
+            </div>
+          ) : destinations.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
+              <p className="text-slate-600">
+                No destinations are available yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {destinations.map((destination) => (
+                <DestinationCard
+                  key={destination._id}
+                  destination={destination}
+                />
+              ))}
+            </div>
+          )}
+        </Container>
+      </section>
     </main>
   );
 }
