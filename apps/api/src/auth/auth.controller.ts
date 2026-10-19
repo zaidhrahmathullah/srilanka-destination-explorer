@@ -5,11 +5,15 @@ import {
   HttpStatus,
   Post,
   Res,
+  Get,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 @Controller('auth')
 export class AuthController {
@@ -52,4 +56,17 @@ export class AuthController {
       message: 'Logout successful',
     };
   }
+
+  
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getCurrentAdmin(
+    @Req() request: Request & { adminId?: string },
+  ) {
+    return {
+      id: request.adminId,
+      authenticated: true,
+    };
+  }
+
 }
