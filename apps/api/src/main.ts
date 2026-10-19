@@ -21,13 +21,13 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT ?? 4000;
+  const port = Number(process.env.PORT ?? 4000);
 
   app.setGlobalPrefix('api');
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`Backend running at http://localhost:${port}`);
+  console.log(`Backend listening on port ${port}`); 
 }
 
 void bootstrap();
