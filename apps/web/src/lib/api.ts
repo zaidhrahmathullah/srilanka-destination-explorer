@@ -1,5 +1,5 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
+const SERVER_API_BASE_URL =
+  process.env.BACKEND_API_URL ??
   "http://localhost:4000/api";
 
 export function getApiUrl(path: string): string {
@@ -7,7 +7,12 @@ export function getApiUrl(path: string): string {
     ? path
     : `/${path}`;
 
-  return `${API_BASE_URL.replace(/\/$/, "")}${normalizedPath}`;
+  const baseUrl =
+    typeof window === "undefined"
+      ? SERVER_API_BASE_URL
+      : "/api";
+
+  return `${baseUrl.replace(/\/$/, "")}${normalizedPath}`;
 }
 
 export async function apiRequest(

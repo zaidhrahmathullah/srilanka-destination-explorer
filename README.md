@@ -32,26 +32,42 @@ A full-stack application built for the **Scripterlab Software Engineer Internshi
 | External API | Open-Meteo | Live weather based on destination coordinates |
 | Hosting | Railway | Separate frontend, backend and MongoDB services |
 
+
 ## Architecture
 
 ```text
 Visitor / Admin browser
         |
-        +-- Next.js frontend (Railway)
-        |     |-- Public pages: server-side requests for destinations/weather
-        |     `-- Admin UI: browser requests with credentials: "include"
+        v
+Next.js frontend (Railway)
         |
-        `-----------------------> NestJS REST API (Railway)
-                                  |-- /api/destinations
-                                  |-- /api/destinations/:id/weather
-                                  |-- /api/auth/login, /logout, /me
-                                  |-- DTO validation + JWT guard
-                                  |
-                                  +--> MongoDB (Railway private network)
-                                  `--> Open-Meteo (weather lookup)
+        |-- Public pages: server-side API requests
+        |
+        |-- Admin UI: same-origin /api requests
+        |       |
+        |       v
+        |   Next.js API rewrite proxy
+        |
+        v
+NestJS REST API (Railway)
+        |
+        |-- /api/destinations
+        |-- /api/destinations/:id/weather
+        |-- /api/auth/login, /logout, /me
+        |-- DTO validation + JWT guard
+        |
+        +--> MongoDB (Railway private network)
+        |
+        +--> Open-Meteo (weather lookup)
 ```
 
-The frontend communicates with NestJS rather than querying MongoDB or Open-Meteo directly. Weather is requested when a destination detail page is viewed; it is **not stored in MongoDB**.
+The frontend communicates with NestJS rather than accessing MongoDB or Open-Meteo directly.
+
+Browser API requests use the frontend's same-origin `/api` path. Next.js forwards these requests to the NestJS backend using a server-side rewrite. This allows authentication cookies to be handled under the frontend origin without requiring third-party cookies.
+
+Server-rendered destination and weather requests use the backend API URL directly.
+
+Weather is requested when a destination detail page is viewed; it is not stored in MongoDB.
 
 ## Repository structure
 
@@ -113,7 +129,7 @@ Create `apps/api/.env` (do **not** commit it):
 ```dotenv
 MONGODB_URI=mongodb://127.0.0.1:27017/srilanka_destination_explorer
 JWT_SECRET=replace_with_a_long_random_secret
-ADMIN_EMAIL=admin@example.com
+ADMIN_EMAIL=replace_with_your_email
 ADMIN_PASSWORD=replace_with_a_strong_demo_password
 WEB_ORIGIN=http://localhost:3000
 PORT=4000
@@ -122,15 +138,20 @@ NODE_ENV=development
 
 Use a valid MongoDB URI. `ADMIN_EMAIL` and `ADMIN_PASSWORD` are used by the **seed script** to create the initial account. Changing `ADMIN_PASSWORD` later does not automatically change the existing password stored in MongoDB.
 
+
 ### Frontend configuration
 
 Create `apps/web/.env.local` (do **not** commit it):
 
 ```dotenv
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
+BACKEND_API_URL=http://localhost:4000/api
 ```
 
-`NEXT_PUBLIC_API_BASE_URL` is exposed to the browser, so it must contain only the public API address, **never a secret**.
+`BACKEND_API_URL` is a server-side environment variable used by Next.js to communicate with the NestJS backend.
+
+Browser requests use the same-origin `/api` path, which Next.js proxies to the configured backend.
+
+The backend must be running on port 4000 for the local setup.
 
 ### Seed the database
 
@@ -185,13 +206,16 @@ Example read-only request:
 curl https://srilanka-destination-explorer-production.up.railway.app/api/destinations
 ```
 
+
 ### Authentication and security
 
 - Passwords are stored as bcrypt hashes, not plaintext.
 - The backend signs JWTs and sends the session token in an HTTP-only `admin_token` cookie.
+- Browser authentication requests use the Next.js same-origin `/api` proxy.
 - The frontend sends authenticated requests with `credentials: "include"`.
-- CORS allows the configured `WEB_ORIGIN` and credentials.
-- In production the cookie uses `Secure` and `SameSite=None` to support the separate Railway frontend/backend origins. Browser policies that block third-party cookies may affect this arrangement.
+- The Next.js proxy forwards API requests and authentication cookies to the NestJS backend.
+- Production cookies use `Secure` and `SameSite=None`. Through the same-origin proxy, the browser communicates with the frontend origin rather than directly relying on third-party cookies.
+- The backend configures CORS using `WEB_ORIGIN` and allows credentials.
 - NestJS `JwtAuthGuard` protects create, update, delete and `/auth/me` endpoints. Hiding frontend routes alone is **not** the security boundary.
 - Global `ValidationPipe` uses `whitelist`, `forbidNonWhitelisted` and `transform`.
 
@@ -232,10 +256,10 @@ Railway supplies the backend's listening `PORT`. The NestJS server binds to `0.0
 **Frontend**
 
 ```dotenv
-NEXT_PUBLIC_API_BASE_URL=https://srilanka-destination-explorer-production.up.railway.app/api
+BACKEND_API_URL=https://srilanka-destination-explorer-production.up.railway.app/api
 ```
 
-After changing a `NEXT_PUBLIC_` variable, rebuild/redeploy the frontend so the new value is included in the client bundle.
+After changing a `BACKEND_API_URL` variable, rebuild/redeploy the frontend so the new value is included in the client bundle.
 
 ### Production database seeding (temporary Railway service)
 
@@ -297,9 +321,9 @@ Admin login: https://srilanka-destination-explorer.up.railway.app/admin/login
 | Symptom | Check |
 |---|---|
 | Backend fails to start | `MONGODB_URI`, MongoDB availability, backend logs |
-| Frontend cannot fetch API | `NEXT_PUBLIC_API_BASE_URL`, backend URL, redeployment |
+| Frontend cannot fetch API | `BACKEND_API_URL`, backend availability, Next.js proxy configuration and Railway deployment logs |
 | Browser reports CORS failure | Exact frontend origin in backend `WEB_ORIGIN` |
-| Login returns 200 but `/auth/me` returns 401 | Cookie attributes, browser third-party-cookie policy, `credentials: "include"` |
+| Login returns 200 but `/auth/me` returns 401 | Confirm browser requests use the frontend's `/api` proxy, verify `admin_token` is sent, and check JWT validation |
 | Seed skips admin | Account already exists; changing environment password will not update stored hash |
 | Weather unavailable | Open-Meteo connectivity, upstream response and backend logs |
 | Destinations missing | Seed output, MongoDB connection and `/api/destinations` |

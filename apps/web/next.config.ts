@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
+const backendApiUrl =
+  process.env.BACKEND_API_URL ??
+  "http://localhost:4000/api";
+
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     agentFeedback: true,
   },
+
   turbopack: {
     rules: {
       "*.css": {
@@ -12,6 +16,15 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${backendApiUrl.replace(/\/$/, "")}/:path*`,
+      },
+    ];
   },
 };
 
